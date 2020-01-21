@@ -63,8 +63,9 @@ LSM303C_sensor LSM303C::read(byte addr) {
 }
 
 bool LSM303C::begin() {
-  Wire.begin(my_sda, my_scl);
-  Wire.setClock(400000);
+  //Wire.begin(my_sda, my_scl);
+  Wire.begin();
+  //Wire.setClock(400000);
 
   uint8_t id_acc, id_mag;
   byte ok = 1;
@@ -87,7 +88,7 @@ bool LSM303C::begin() {
     write8(LSM303C_ADDR_ACC, 0x23, 0x34); //+-8g full scale
 
     // enable magnetometer
-    write8(LSM303C_ADDR_MAG, 0x20, 0x5c);
+    write8(LSM303C_ADDR_MAG, 0x20, 0xdc);
     write8(LSM303C_ADDR_MAG, 0x21, 0x60);
     write8(LSM303C_ADDR_MAG, 0x22, 0x00);
     write8(LSM303C_ADDR_MAG, 0x23, 0x08);
@@ -116,11 +117,31 @@ LSM303C_sensor LSM303C::read_mag() {
 
   return v;
 }
+float LSM303C::read_tempC()
+{
+  uint8_t valueL;
+  uint8_t valueH;
+  float temperature;
+
+  valueL =   LSM303C::read8(0x1e, 0x2e);
+  valueH =   LSM303C::read8(0x1e, 0x2f);
+
+  temperature = (float)( (valueH << 8) | valueL );
+  temperature /= 8; // 8 digits/˚C
+  temperature += 25;// Reads 0 @ 25˚C
+
+  return temperature;
+
+  
+}
 
 double LSM303C::get_heading() {
     LSM303C_sensor m = read_mag();
     LSM303C_sensor a = read_acc();
 
+    //  char buffer[100];
+    //  sprintf(buffer, "m(X, Y, Z): (%i, %i, %i)\n", m.x, m.y, m.z);
+    //  Serial.print(buffer);
     //Serial.printf("m(x, y, z): (%i, %i, %i)\n", m.raw.x, m.raw.y, m.raw.z);
     //Serial.printf("a(x, y, z): (%i, %i, %i)\n", a.raw.x, a.raw.y, a.raw.z);
 
@@ -191,8 +212,13 @@ void LSM303C::calibrate_mag() {
     if (m.raw.z > mag_max.z) mag_max.z = m.raw.z;
 
     if (millis() - now > 1000) {
-      Serial.printf("Mag mins (X, Y, Z): (%i, %i, %i)\n", mag_min.x, mag_min.y, mag_min.z);
-      Serial.printf("Mag maxs (X, Y, Z): (%i, %i, %i)\n", mag_max.x, mag_max.y, mag_max.z);
+      char buffer[100];
+      sprintf(buffer, "Mag mins (X, Y, Z): (%i, %i, %i)\n", mag_min.x, mag_min.y, mag_min.z);
+      Serial.print(buffer);
+      sprintf(buffer, "Mag maxs (X, Y, Z): (%i, %i, %i)\n", mag_max.x, mag_max.y, mag_max.z);
+      Serial.print(buffer);
+      //Serial.printf("Mag mins (X, Y, Z): (%i, %i, %i)\n", mag_min.x, mag_min.y, mag_min.z);
+      //Serial.printf("Mag maxs (X, Y, Z): (%i, %i, %i)\n", mag_max.x, mag_max.y, mag_max.z);
       now = millis();
     }
   }

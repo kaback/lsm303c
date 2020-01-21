@@ -49,6 +49,7 @@ class LSM303C {
     bool begin(void);
     LSM303C_sensor read_acc(void);
     LSM303C_sensor read_mag(void);
+    float read_tempC();
     double get_heading();
     void set_mag_min_max(LSM303C_raw mag_min, LSM303C_raw mag_max);
     double calibrate_acc(void);
